@@ -1,0 +1,47 @@
+{
+  "name": "discord-js-boilerplate",
+  "module": "./src/index.ts",
+  "main": "./src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c && node scripts/fix-json-imports.js",
+    "dev": "nodemon ./src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "db:studio": "drizzle-kit studio",
+    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.8.0",
+    "@kineticcafe/rollup-plugin-delete": "^3.0.0",
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^22.0.3",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "9.x",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "globals": "^15.9.0",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.3.3",
+    "rollup": "^4.20.0",
+    "tsx": "^4.21.0",
+    "typescript-eslint": "^8.0.1"
+  },
+  "dependencies": {
+    "@discordjs/builders": "^1.9.0",
+    "@upstash/redis": "^1.37.0",
+    "cron": "^4.4.0",
+    "discord-html-transcripts": "^3.3.0",
+    "discord.js": "^14.15.3",
+    "dotenv": "^17.4.1",
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9",
+    "zod": "^3.23.8"
+  }
+}
