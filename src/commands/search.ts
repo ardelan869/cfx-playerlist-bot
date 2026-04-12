@@ -1,17 +1,11 @@
 import { command } from '@/lib/commands';
-import { isServerResponse } from '@/lib/utils';
+import { getPingEmoji, isServerResponse } from '@/lib/utils';
 import {
   ContainerBuilder,
   MessageFlags,
   SlashCommandBuilder
 } from 'discord.js';
 import { eq } from 'drizzle-orm';
-
-// function getPingEmoji(ping: number): string {
-//   if (ping <= 30) return '🟢';
-//   if (ping <= 70) return '🟡';
-//   return '🔴';
-// }
 
 export default command(
   new SlashCommandBuilder()
@@ -79,7 +73,7 @@ export default command(
 
     const players = data.Data.players
       .filter((p) => p.name.toLowerCase().includes(query))
-      .slice(50);
+      .slice(0, 50);
 
     const container = new ContainerBuilder();
 
@@ -87,7 +81,10 @@ export default command(
       container.addTextDisplayComponents((textDisplay) =>
         textDisplay.setContent(`# ${server.label}
 ## Ergebnisse für: "${query}" (${players.length} Online)
-${players.map((p) => `- **${p.name}** (${p.id}) \`${p.ping}ms\``).join('\n')}`)
+${players
+  .sort((a, b) => a.ping - b.ping)
+  .map((p) => `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``)
+  .join('\n')}`)
       );
     } else {
       container.addTextDisplayComponents((textDisplay) =>

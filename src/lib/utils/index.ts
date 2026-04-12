@@ -21,3 +21,9 @@ export function isServerResponse(value: unknown): value is ServerResponse {
     'EndPoint' in value
   );
 }
+
+export function getPingEmoji(ping: number): string {
+  if (ping <= 30) return '🟢';
+  if (ping <= 70) return '🟡';
+  return '🔴';
+}

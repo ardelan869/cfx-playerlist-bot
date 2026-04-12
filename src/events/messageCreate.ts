@@ -1,5 +1,5 @@
 import { event } from '@/lib/events';
-import { isServerResponse } from '@/lib/utils';
+import { getPingEmoji, isServerResponse } from '@/lib/utils';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
 import { eq } from 'drizzle-orm';
 
@@ -64,7 +64,7 @@ Beispiel: **!fc saints**`
 
   const players = data.Data.players
     .filter((p) => p.name.toLowerCase().includes(query))
-    .slice(50);
+    .slice(0, 50);
 
   const container = new ContainerBuilder();
 
@@ -72,7 +72,10 @@ Beispiel: **!fc saints**`
     container.addTextDisplayComponents((textDisplay) =>
       textDisplay.setContent(`# ${server.label}
 ## Ergebnisse für: "${query}" (${players.length} Online)
-${players.map((p) => `- **${p.name}** (${p.id}) \`${p.ping}ms\``).join('\n')}`)
+${players
+  .sort((a, b) => a.ping - b.ping)
+  .map((p) => `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``)
+  .join('\n')}`)
     );
   } else {
     container.addTextDisplayComponents((textDisplay) =>
