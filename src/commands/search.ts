@@ -77,9 +77,9 @@ export default command(
       return;
     }
 
-    const players = data.Data.players.filter((p) =>
-      p.name.toLowerCase().includes(query)
-    );
+    const players = data.Data.players
+      .filter((p) => p.name.toLowerCase().includes(query))
+      .slice(50);
 
     const container = new ContainerBuilder();
 
