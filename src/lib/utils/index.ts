@@ -31,6 +31,12 @@ export function getPingEmoji(ping: number): string {
   return '<:status_dnd:1493077126273040394>';
 }
 
+export function getCountEmoji(count: number): string {
+  if (count <= 5) return '<:status_dnd:1493077126273040394>';
+  if (count <= 15) return '<:status_idle:1493077127703035945>';
+  return '<:status_online:1493077129242476604>';
+}
+
 const DEFAULT_RGB_TUPLE: RGBTuple = [0, 0, 0];
 
 export function hexToRGB(hex: string): RGBTuple {

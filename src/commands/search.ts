@@ -1,5 +1,5 @@
 import { command } from '@/lib/commands';
-import { getPingEmoji, isServerResponse } from '@/lib/utils';
+import { getPingEmoji, getCountEmoji, isServerResponse } from '@/lib/utils';
 import {
   ButtonStyle,
   ContainerBuilder,
@@ -12,6 +12,8 @@ import {
   type MessageReplyOptions
 } from 'discord.js';
 import { eq } from 'drizzle-orm';
+
+const MIN_COUNT_THRESHOLD = 5;
 
 export interface SearchContext {
   identifier: string;
@@ -65,18 +67,6 @@ export async function handleSearch(ctx: SearchContext) {
     });
   }
 
-  const parsedQuery = parseInt(query);
-  const resemblesNumber =
-    !Number.isNaN(parsedQuery) && Number.isSafeInteger(parsedQuery);
-
-  const players = data.Data.players
-    .filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        (resemblesNumber && p.id.toString().includes(query))
-    )
-    .slice(0, 50);
-
   const container = new ContainerBuilder().addMediaGalleryComponents(
     (mediaGallery) =>
       mediaGallery.addItems((m) =>
@@ -84,24 +74,89 @@ export async function handleSearch(ctx: SearchContext) {
       )
   );
 
-  if (players.length) {
+  if (query === 'camper') {
+    const wordCount: Record<string, number> = {};
+
+    for (const player of data.Data.players) {
+      const split = player.name
+        .replaceAll(/[-_[\]{}()*+?.,\\^$|#/]/g, ' ')
+        .split(' ');
+
+      for (let word of split) {
+        word = word.toLowerCase();
+
+        if (word.length < 3) continue;
+
+        if (word in wordCount) {
+          wordCount[word]!++;
+        } else {
+          for (const key in wordCount) {
+            if (word.startsWith(key)) {
+              wordCount[key]!++;
+              break;
+            }
+          }
+
+          wordCount[word] = 1;
+        }
+      }
+    }
+
+    const entries = Object.entries(wordCount)
+      .filter(
+        ([word, count]) => count >= MIN_COUNT_THRESHOLD && word !== 'zivi'
+      )
+      .sort((a, b) => b[1] - a[1]);
+
+    const convertName = (name: string) =>
+      name.length <= 4
+        ? name.toUpperCase()
+        : name.replace(name[0]!, name[0]!.toUpperCase());
+
     container.addTextDisplayComponents((textDisplay) =>
       textDisplay.setContent(
         `# ${server.label}
-## Ergebnisse für: "${query}" (${players.length} Online)
-${players
-  .sort((a, b) => a.ping - b.ping)
-  .map((p) => `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``)
-  .join('\n')}`
+## Gefundene Camper (${entries.length > 0 ? entries.length : 'Keine'} gefunden)
+${
+  entries.length
+    ? entries
+        .map(
+          ([word, count]) =>
+            `${getCountEmoji(count)} **${convertName(word)}:** \`${count}\``
+        )
+        .join('\n')
+    : `> Es konnte keine Camper  gefunden werden.`
+}`
       )
     );
   } else {
+    const parsedQuery = parseInt(query);
+    const resemblesNumber =
+      !Number.isNaN(parsedQuery) && Number.isSafeInteger(parsedQuery);
+
+    const players = data.Data.players
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          (resemblesNumber && p.id.toString().includes(query))
+      )
+      .slice(0, 50);
+
     container.addTextDisplayComponents((textDisplay) =>
       textDisplay.setContent(
         `# ${server.label}
-## Ergebnisse für: "${query}" (Keine Online)
-
-> Es konnte kein Spieler mit dem Namen "${query}" gefunden werden.`
+## Ergebnisse für: "${query}" (${players.length > 0 ? players.length : 'Keine'} Online)
+${
+  players.length
+    ? players
+        .sort((a, b) => a.ping - b.ping)
+        .map(
+          (p) =>
+            `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``
+        )
+        .join('\n')
+    : `> Es konnte kein Spieler mit dem Namen "${query}" gefunden werden.`
+}`
       )
     );
   }
