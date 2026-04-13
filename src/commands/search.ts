@@ -65,8 +65,16 @@ export async function handleSearch(ctx: SearchContext) {
     });
   }
 
+  const parsedQuery = parseInt(query);
+  const resemblesNumber =
+    !Number.isNaN(parsedQuery) && Number.isSafeInteger(parsedQuery);
+
   const players = data.Data.players
-    .filter((p) => p.name.toLowerCase().includes(query))
+    .filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        (resemblesNumber && p.id.toString().includes(query))
+    )
     .slice(0, 50);
 
   const container = new ContainerBuilder().addMediaGalleryComponents(
