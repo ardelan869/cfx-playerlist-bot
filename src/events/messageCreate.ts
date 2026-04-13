@@ -8,9 +8,12 @@ export default event('messageCreate', async (message) => {
 
   if (!channel.isSendable() || !message.content.startsWith('!')) return;
 
-  const args = message.content.replace('!', '').trim().split(' ');
+  const [identifier, ...args] = message.content
+    .replace('!', '')
+    .trim()
+    .split(' ');
 
-  if (args.length < 2) {
+  if (!identifier || !identifier.length || !args.length) {
     message.reply({
       content: `Nutzung: **!<identifier> <query>**
 Beispiel: **!fc saints**`
@@ -19,8 +22,7 @@ Beispiel: **!fc saints**`
     return;
   }
 
-  const identifier = args[0]!;
-  const query = args.slice(1).join(' ');
+  const query = args.join(' ');
 
   handleSearch({
     identifier,
