@@ -1,6 +1,6 @@
 import { RGBTuple } from 'discord.js';
 
-interface ServerResponsePlayer {
+export interface ServerResponsePlayer {
   endpoint: string;
   id: number;
   identifiers: string[];
@@ -8,7 +8,7 @@ interface ServerResponsePlayer {
   ping: number;
 }
 
-interface ServerResponse {
+export interface ServerResponse {
   Data: {
     players: ServerResponsePlayer[];
     vars: Record<string, string>;
