@@ -1,5 +1,7 @@
 import { ActivityType } from 'discord.js';
 
+export const interval = 60000;
+
 export default async function activity() {
   if (!client.user) return;
 
