@@ -1,5 +1,3 @@
-import { ActivityType } from 'discord.js';
-
 export const interval = 60000;
 
 export default async function activity() {
@@ -8,9 +6,8 @@ export default async function activity() {
   const guilds = await client.guilds.fetch();
 
   client.user.setActivity({
-    name: `${guilds.size} Discord Server`,
+    name: `On ${guilds.size} Servers`,
     state: 'made by ardelan869',
-    type: ActivityType.Watching,
     url: 'https://discord.gg/ays2026'
   });
 }
