@@ -18,6 +18,12 @@ export default event('messageCreate', async (message) => {
   const pet = config.pets.find((pet) => pet.name.includes(identifier));
 
   if (pet) {
+    const guilds = typeof pet.guild === 'string' ? [pet.guild] : pet.guild;
+
+    if (guilds && message.guildId && !guilds.includes(message.guildId)) {
+      return;
+    }
+
     await message.reply({
       content: pet.images[Math.floor(Math.random() * pet.images.length)]
     });
