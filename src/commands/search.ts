@@ -162,11 +162,9 @@ ${
 
   container
     .addSeparatorComponents((s) => s)
-    .addSectionComponents((section) =>
-      section.addTextDisplayComponents((text) =>
-        text.setContent(`Erstellt von Ardelan Y.
+    .addTextDisplayComponents((text) =>
+      text.setContent(`Erstellt von Ardelan Y.
 -# @ardelan869`)
-      )
     );
 
   if (followUp) {
