@@ -6,8 +6,7 @@ export default async function activity() {
   const guilds = await client.guilds.fetch();
 
   client.user.setActivity({
-    name: `On ${guilds.size} Servers`,
-    state: 'made by ardelan869',
-    url: 'https://discord.gg/ays2026'
+    name: `Auf ${guilds.size} Discord-Servern`,
+    state: 'made by ardelan869'
   });
 }

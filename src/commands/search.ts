@@ -1,7 +1,6 @@
 import { command } from '@/lib/commands';
 import { getPingEmoji, getCountEmoji, isServerResponse } from '@/lib/utils';
 import {
-  ButtonStyle,
   ContainerBuilder,
   InteractionReplyOptions,
   MessageFlags,
@@ -67,12 +66,12 @@ export async function handleSearch(ctx: SearchContext) {
     });
   }
 
-  const container = new ContainerBuilder().addMediaGalleryComponents(
-    (mediaGallery) =>
-      mediaGallery.addItems((m) =>
-        m.setURL(data.Data.vars.banner_connecting ?? config.banner)
-      )
-  );
+  const container = new ContainerBuilder();
+
+  if (data.Data.vars.banner_connecting)
+    container.addMediaGalleryComponents((mediaGallery) =>
+      mediaGallery.addItems((m) => m.setURL(data.Data.vars.banner_connecting!))
+    );
 
   if (query === 'camper') {
     const wordCount: Record<string, number> = {};
@@ -164,20 +163,10 @@ ${
   container
     .addSeparatorComponents((s) => s)
     .addSectionComponents((section) =>
-      section
-        .addTextDisplayComponents((text) =>
-          text.setContent(`Erstellt von Ardelan Y.
+      section.addTextDisplayComponents((text) =>
+        text.setContent(`Erstellt von Ardelan Y.
 -# @ardelan869`)
-        )
-        .setButtonAccessory((button) =>
-          button
-            .setEmoji({
-              name: '🔗'
-            })
-            .setLabel('・ AYS 2026')
-            .setURL('https://discord.gg/ays2026')
-            .setStyle(ButtonStyle.Link)
-        )
+      )
     );
 
   if (followUp) {
