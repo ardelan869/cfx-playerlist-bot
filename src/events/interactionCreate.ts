@@ -69,10 +69,10 @@ export default event(Events.InteractionCreate, async (interaction) => {
     const focused = interaction.options.getFocused();
     const servers = await db
       .select({
-        label: global.schema.servers.label,
-        identifier: global.schema.servers.identifier
+        label: schema.servers.label,
+        identifier: schema.servers.identifier
       })
-      .from(global.schema.servers);
+      .from(schema.servers);
 
     const filtered = servers.filter((server) =>
       server.identifier.startsWith(focused)

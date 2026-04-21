@@ -1,49 +1,130 @@
 import { command } from '@/lib/commands';
-import { getPingEmoji, getCountEmoji, isServerResponse } from '@/lib/utils';
+
+import { eq } from 'drizzle-orm';
+import { isServerResponse } from '@/lib/utils';
+
+import createCamperResponse from './responses/camper';
+import createPlayerResponse from './responses/player';
+import createDropResponse from './responses/drop';
+
 import {
   ContainerBuilder,
-  InteractionReplyOptions,
   MessageFlags,
-  MessagePayload,
   SlashCommandBuilder,
+  type Guild,
+  type InteractionReplyOptions,
+  type MessageCreateOptions,
+  type MessagePayload,
   type Awaitable,
   type InteractionEditReplyOptions,
   type MessageReplyOptions
 } from 'discord.js';
-import { eq } from 'drizzle-orm';
 
-const MIN_COUNT_THRESHOLD = 5;
+export type SearchContextFollowUp = (
+  options: string | MessagePayload | InteractionReplyOptions
+) => Awaitable<unknown>;
+
+export type SearchContextSend = (
+  options: string | MessagePayload | MessageCreateOptions
+) => Awaitable<unknown>;
 
 export interface SearchContext {
   identifier: string;
   query: string;
-
+  guild: Guild | null;
   reply: (
     options:
       | string
       | MessagePayload
       | (InteractionEditReplyOptions & MessageReplyOptions)
   ) => Awaitable<unknown>;
-  followUp?: (
-    options: string | MessagePayload | InteractionReplyOptions
-  ) => Awaitable<unknown>;
+  followUp?: SearchContextFollowUp;
+  send?: SearchContextSend;
 }
 
-export async function handleSearch(ctx: SearchContext) {
-  const { identifier, query, reply, followUp } = ctx;
+function isValidArray(value: unknown): value is (string | number)[] {
+  return Array.isArray(value) && value.every((v) => typeof v === 'string');
+}
 
+async function notify(
+  guild: Guild,
+  followUp?: SearchContextFollowUp,
+  send?: SearchContextSend
+) {
+  const now = new Date();
+
+  let [notifiedServer] = await db
+    .select({
+      read: schema.notifiedServers.read
+    })
+    .from(schema.notifiedServers)
+    .where(eq(schema.notifiedServers.serverId, guild.id))
+    .limit(1);
+
+  if (!notifiedServer) {
+    await db.insert(schema.notifiedServers).values({
+      serverId: guild.id,
+      lastNotify: now,
+      read: []
+    });
+
+    notifiedServer = {
+      read: []
+    };
+  }
+
+  const read = isValidArray(notifiedServer?.read) ? notifiedServer.read : [];
+  const originalLength = read.length;
+
+  for (const notification of global.notifications) {
+    if (read.includes(notification.id)) continue;
+
+    read.push(notification.id);
+
+    const message: { content: string; files?: string[] } = {
+      content: notification.message
+    };
+
+    if (notification.attachmentURL) {
+      message.files = [notification.attachmentURL];
+    }
+
+    if (followUp) await followUp(message);
+    if (send) await send(message);
+  }
+
+  if (originalLength !== read.length) {
+    await db
+      .update(schema.notifiedServers)
+      .set({ read })
+      .where(eq(schema.notifiedServers.serverId, guild.id));
+  }
+}
+
+export async function handleSearch({
+  identifier,
+  query,
+  guild,
+  reply,
+  followUp,
+  send
+}: SearchContext) {
   const [server] = await db
     .select({
-      id: global.schema.servers.id,
-      label: global.schema.servers.label
+      id: schema.servers.id,
+      identifier: schema.servers.identifier,
+      label: schema.servers.label
     })
-    .from(global.schema.servers)
-    .where(eq(global.schema.servers.identifier, identifier));
+    .from(schema.servers)
+    .where(eq(schema.servers.identifier, identifier))
+    .limit(1);
 
   if (!server) {
-    return reply({
+    await reply({
       content: 'Server konnte nicht gefunden werden.'
     });
+
+    return;
   }
 
   const resp = await fetch(
@@ -61,9 +142,11 @@ export async function handleSearch(ctx: SearchContext) {
   const data = await resp.json();
 
   if (!isServerResponse(data)) {
-    return reply({
+    await reply({
       content: 'Server konnte nicht gefunden werden.'
     });
+
+    return;
   }
 
   const container = new ContainerBuilder();
@@ -73,91 +156,17 @@ export async function handleSearch(ctx: SearchContext) {
       mediaGallery.addItems((m) => m.setURL(data.Data.vars.banner_connecting!))
     );
 
-  if (query === 'camper') {
-    const wordCount: Record<string, number> = {};
-
-    for (const player of data.Data.players) {
-      const split = player.name
-        .replaceAll(/[-_[\]{}()*+?.,\\^$|#/]/g, ' ')
-        .split(' ');
-
-      for (let word of split) {
-        word = word.toLowerCase();
-
-        if (word.length < 3) continue;
-
-        if (word in wordCount) {
-          wordCount[word]!++;
-        } else {
-          for (const key in wordCount) {
-            if (word.startsWith(key)) {
-              wordCount[key]!++;
-              break;
-            }
-          }
-
-          wordCount[word] = 1;
-        }
-      }
-    }
-
-    const entries = Object.entries(wordCount)
-      .filter(
-        ([word, count]) => count >= MIN_COUNT_THRESHOLD && word !== 'zivi'
-      )
-      .sort((a, b) => b[1] - a[1]);
-
-    const convertName = (name: string) =>
-      name.length <= 4
-        ? name.toUpperCase()
-        : name.replace(name[0]!, name[0]!.toUpperCase());
-
-    container.addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(
-        `# ${server.label}
-## Gefundene Camper (${entries.length > 0 ? entries.length : 'Keine'} gefunden)
-${
-  entries.length
-    ? entries
-        .map(
-          ([word, count]) =>
-            `${getCountEmoji(count)} **${convertName(word)}:** \`${count}\``
-        )
-        .join('\n')
-    : `> Es konnte keine Camper  gefunden werden.`
-}`
-      )
-    );
-  } else {
-    const parsedQuery = parseInt(query);
-    const resemblesNumber =
-      !Number.isNaN(parsedQuery) && Number.isSafeInteger(parsedQuery);
-
-    const players = data.Data.players
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          (resemblesNumber && p.id.toString().includes(query))
-      )
-      .slice(0, 50);
-
-    container.addTextDisplayComponents((textDisplay) =>
-      textDisplay.setContent(
-        `# ${server.label}
-## Ergebnisse für: "${query}" (${players.length > 0 ? players.length : 'Keine'} Online)
-${
-  players.length
-    ? players
-        .sort((a, b) => a.ping - b.ping)
-        .map(
-          (p) =>
-            `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``
-        )
-        .join('\n')
-    : `> Es konnte kein Spieler mit dem Namen "${query}" gefunden werden.`
-}`
-      )
-    );
+  switch (query) {
+    case 'camper':
+      createCamperResponse(container, server, data.Data.players);
+      break;
+    case 'drop':
+    case 'drops':
+      await createDropResponse(container, server);
+      break;
+    default:
+      createPlayerResponse(container, server, data.Data.players, query);
+      break;
   }
 
   container
@@ -167,18 +176,24 @@ ${
 -# @ardelan869`)
     );
 
+  if (guild && notifications.length && guild.id === '1448003469528006698') {
+    await notify(guild, followUp, send);
+  }
+
   if (followUp) {
     await reply({
       content: 'Ergebnisse werden gesendet...'
     });
 
-    return followUp({
+    await followUp({
       components: [container],
       flags: MessageFlags.IsComponentsV2
     });
+
+    return;
   }
 
-  return reply({
+  await reply({
     components: [container],
     flags: MessageFlags.IsComponentsV2
   });
@@ -213,6 +228,7 @@ export default command(
     await handleSearch({
       identifier,
       query,
+      guild: interaction.guild,
       reply: (options) => interaction.editReply(options),
       followUp: (options) => interaction.followUp(options)
     });

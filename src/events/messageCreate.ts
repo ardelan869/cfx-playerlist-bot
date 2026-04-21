@@ -45,6 +45,8 @@ Beispiel: **!fc saints**`
   handleSearch({
     identifier,
     query,
-    reply: (options) => message.reply(options)
+    guild: message.guild,
+    reply: (options) => message.reply(options),
+    send: (options) => message.channel.send(options)
   });
 });

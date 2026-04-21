@@ -70,10 +70,10 @@ export default command(
 
         const [result] = await db
           .select({
-            id: global.schema.servers.id
+            id: schema.servers.id
           })
-          .from(global.schema.servers)
-          .where(eq(global.schema.servers.id, id));
+          .from(schema.servers)
+          .where(eq(schema.servers.id, id));
 
         if (result?.id) {
           await interaction.editReply({
@@ -83,7 +83,7 @@ export default command(
           return;
         }
 
-        await db.insert(global.schema.servers).values({
+        await db.insert(schema.servers).values({
           id,
           identifier,
           label
@@ -99,9 +99,9 @@ export default command(
         const id = interaction.options.getString('server', true);
 
         const [result] = await db
-          .select({ id: global.schema.servers.id })
-          .from(global.schema.servers)
-          .where(eq(global.schema.servers.id, id));
+          .select({ id: schema.servers.id })
+          .from(schema.servers)
+          .where(eq(schema.servers.id, id));
 
         if (!result?.id) {
           await interaction.editReply({
@@ -111,9 +111,7 @@ export default command(
           return;
         }
 
-        await db
-          .delete(global.schema.servers)
-          .where(eq(global.schema.servers.id, id));
+        await db.delete(schema.servers).where(eq(schema.servers.id, id));
 
         await interaction.editReply({
           content: 'Server erfolgreich entfernt!'
@@ -124,11 +122,11 @@ export default command(
       case 'list': {
         const servers = await db
           .select({
-            id: global.schema.servers.id,
-            identifier: global.schema.servers.identifier,
-            label: global.schema.servers.label
+            id: schema.servers.id,
+            identifier: schema.servers.identifier,
+            label: schema.servers.label
           })
-          .from(global.schema.servers);
+          .from(schema.servers);
 
         await interaction.editReply({
           content: servers

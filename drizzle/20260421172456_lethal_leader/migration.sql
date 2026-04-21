@@ -1,0 +1,1 @@
+ALTER TABLE "notifications" ALTER COLUMN "attachment_url" DROP NOT NULL;

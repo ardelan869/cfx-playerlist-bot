@@ -5,7 +5,9 @@ import { upstashCache } from 'drizzle-orm/cache/upstash';
 import type { Logger } from 'drizzle-orm';
 import chalk from 'chalk';
 
-import servers from '@/db/schema/servers';
+import { servers, drops } from '@/db/schema/servers';
+import notifications from '@/db//schema/notifications';
+import notifiedServers from '@/db/schema/notified-servers';
 
 export class DrizzleLogger implements Logger {
   private getQueryType(query: string): string {
@@ -50,11 +52,14 @@ export class DrizzleLogger implements Logger {
   }
 }
 
-export const schema = {
-  servers
+const schema = {
+  servers,
+  drops,
+  notifiedServers,
+  notifications
 };
 
-export const db = drizzle({
+const db = drizzle({
   client: postgres(env.NEON_DATABASE_URL),
   casing: 'snake_case',
   schema,
@@ -72,5 +77,7 @@ export const db = drizzle({
 
 global.db = db;
 global.schema = schema;
+
+export { db, schema, type schema as Schema, type db as DB };
 
 export default db;

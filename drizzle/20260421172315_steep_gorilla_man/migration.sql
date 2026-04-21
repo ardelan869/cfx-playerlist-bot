@@ -1,0 +1,2 @@
+ALTER TABLE "notifications" RENAME COLUMN "images" TO "attachment_url";--> statement-breakpoint
+ALTER TABLE "notifications" ALTER COLUMN "attachment_url" SET DATA TYPE text USING "attachment_url"::text;

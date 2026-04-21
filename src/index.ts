@@ -41,7 +41,7 @@ global.client = client;
 async function main() {
   if (existsSync('./config.json') || existsSync('../config.json')) {
     const file = await import('../config.json', {
-      assert: {
+      with: {
         type: 'json'
       }
     });
