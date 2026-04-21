@@ -43,7 +43,10 @@ export interface SearchContext {
 }
 
 function isValidArray(value: unknown): value is (string | number)[] {
-  return Array.isArray(value) && value.every((v) => typeof v === 'string');
+  return (
+    Array.isArray(value) &&
+    value.every((v) => typeof v === 'string' || typeof v === 'number')
+  );
 }
 
 async function notify(
@@ -81,13 +84,20 @@ async function notify(
 
     read.push(notification.id);
 
-    const message: { content: string; files?: string[] } = {
-      content: notification.message
-    };
+    const container = new ContainerBuilder().addTextDisplayComponents((text) =>
+      text.setContent(notification.message)
+    );
 
     if (notification.attachmentURL) {
-      message.files = [notification.attachmentURL];
+      container.addMediaGalleryComponents((m) =>
+        m.addItems((i) => i.setURL(notification.attachmentURL!))
+      );
     }
+
+    const message = {
+      components: [container],
+      flags: MessageFlags.IsComponentsV2 as number
+    };
 
     if (followUp) await followUp(message);
     if (send) await send(message);
@@ -176,10 +186,6 @@ export async function handleSearch({
 -# @ardelan869`)
     );
 
-  if (guild && notifications.length && guild.id === '1448003469528006698') {
-    await notify(guild, followUp, send);
-  }
-
   if (followUp) {
     await reply({
       content: 'Ergebnisse werden gesendet...'
@@ -190,6 +196,10 @@ export async function handleSearch({
       flags: MessageFlags.IsComponentsV2
     });
 
+    if (guild && notifications.length) {
+      await notify(guild, followUp, send);
+    }
+
     return;
   }
 
@@ -197,6 +207,10 @@ export async function handleSearch({
     components: [container],
     flags: MessageFlags.IsComponentsV2
   });
+
+  if (guild && notifications.length) {
+    await notify(guild, followUp, send);
+  }
 }
 
 export default command(
