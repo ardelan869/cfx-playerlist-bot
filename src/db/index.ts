@@ -6,8 +6,7 @@ import type { Logger } from 'drizzle-orm';
 import chalk from 'chalk';
 
 import { servers, drops } from '@/db/schema/servers';
-import notifications from '@/db//schema/notifications';
-import notifiedServers from '@/db/schema/notified-servers';
+import { Redis } from '@upstash/redis';
 
 export class DrizzleLogger implements Logger {
   private getQueryType(query: string): string {
@@ -54,9 +53,7 @@ export class DrizzleLogger implements Logger {
 
 const schema = {
   servers,
-  drops,
-  notifiedServers,
-  notifications
+  drops
 };
 
 const db = drizzle({
@@ -75,9 +72,22 @@ const db = drizzle({
   })
 });
 
+const redis = new Redis({
+  url: env.REDIS_URL,
+  token: env.REDIS_TOKEN
+});
+
 global.db = db;
 global.schema = schema;
+global.redis = redis;
 
-export { db, schema, type schema as Schema, type db as DB };
+export {
+  db,
+  schema,
+  redis,
+  type schema as Schema,
+  type db as DB,
+  type redis as Redis
+};
 
 export default db;

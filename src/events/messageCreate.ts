@@ -31,7 +31,7 @@ export default event('messageCreate', async (message) => {
     return;
   }
 
-  if (!identifier.length || !args.length) {
+  if (!identifier.length) {
     message.reply({
       content: `Nutzung: **!<identifier> <query>**
 Beispiel: **!fc saints**`
@@ -40,13 +40,18 @@ Beispiel: **!fc saints**`
     return;
   }
 
+  if (identifier.startsWith('!')) {
+    return;
+  }
+
   const query = args.join(' ');
 
   handleSearch({
+    user: message.author,
     identifier,
     query,
-    guild: message.guild,
-    reply: (options) => message.reply(options),
-    send: (options) => message.channel.send(options)
+    // guild: message.guild,
+    reply: (options) => message.reply(options)
+    // send: (options) => message.channel.send(options)
   });
 });

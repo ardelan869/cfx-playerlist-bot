@@ -37,6 +37,8 @@ client.modals = new Collection();
 client.selections = new Collection();
 
 global.client = client;
+global.cachedResponses = {};
+global.currentPageIdx = {};
 
 async function main() {
   if (existsSync('./config.json') || existsSync('../config.json')) {
@@ -52,11 +54,13 @@ async function main() {
   try {
     await client.login(global.env.CLIENT_TOKEN);
 
-    await registerEvents();
-    await registerCommands();
-    await registerButtons();
-    await registerSelections();
-    await registerScripts();
+    await Promise.all([
+      registerEvents(),
+      registerCommands(),
+      registerButtons(),
+      registerSelections(),
+      registerScripts()
+    ]);
   } catch (error) {
     console.error(error);
     process.exit(1);

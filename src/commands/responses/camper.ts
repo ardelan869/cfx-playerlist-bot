@@ -1,13 +1,17 @@
 import type { ContainerBuilder } from 'discord.js';
-import { getCountEmoji, type ServerResponsePlayer } from '@/lib/utils';
+import { getCountEmoji } from '@/lib/utils';
+import type { ServerResponsePlayer } from '@/lib/utils/server';
+import { MIN_COUNT_THRESHOLD } from '@/lib/constants';
 
-const MIN_COUNT_THRESHOLD = 5;
-
-export default function createCamperResponse(
-  container: ContainerBuilder,
-  server: typeof schema.servers.$inferSelect,
-  players: ServerResponsePlayer[]
-) {
+export default function createCamperResponse({
+  container,
+  server,
+  players
+}: {
+  container: ContainerBuilder;
+  server: typeof schema.servers.$inferSelect;
+  players: ServerResponsePlayer[];
+}) {
   const wordCount: Record<string, number> = {};
 
   for (const player of players) {

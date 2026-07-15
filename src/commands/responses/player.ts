@@ -1,23 +1,48 @@
-import type { ContainerBuilder } from 'discord.js';
-import { getPingEmoji, type ServerResponsePlayer } from '@/lib/utils';
+import { ButtonBuilder, ButtonStyle, type ContainerBuilder } from 'discord.js';
+import { type ServerResponsePlayer } from '@/lib/utils/server';
+import { getPingEmoji } from '@/lib/utils';
+import { MAX_PLAYERS } from '@/lib/constants';
 
-export default function createPlayerResponse(
-  container: ContainerBuilder,
-  server: typeof schema.servers.$inferSelect,
-  players: ServerResponsePlayer[],
-  query: string
+export function createButtons(
+  id: string,
+  disablePrevPage: boolean = false,
+  disableNextPage: boolean = false
 ) {
-  const parsedQuery = parseInt(query);
-  const resemblesNumber =
-    !Number.isNaN(parsedQuery) && Number.isSafeInteger(parsedQuery);
+  const prevButton = new ButtonBuilder()
+    .setCustomId(`prev:${id}`)
+    .setEmoji('◀️')
+    .setDisabled(disablePrevPage)
+    .setStyle(ButtonStyle.Secondary);
 
-  const filteredPlayers = players
-    .filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        (resemblesNumber && p.id.toString().includes(query))
-    )
-    .slice(0, 50);
+  const nextButton = new ButtonBuilder()
+    .setCustomId(`next:${id}`)
+    .setEmoji('▶️')
+    .setDisabled(disableNextPage)
+    .setStyle(ButtonStyle.Secondary);
+
+  return [prevButton, nextButton];
+}
+
+export default function createPlayerResponse({
+  container,
+  server,
+  players,
+  query
+}: {
+  container: ContainerBuilder;
+  server: typeof schema.servers.$inferSelect;
+  players: ServerResponsePlayer[];
+  query?: string;
+}) {
+  query = query?.toLowerCase();
+
+  const filteredPlayers = query
+    ? players.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.id.toString().includes(query)
+      )
+    : players;
 
   if (!filteredPlayers.length) {
     container.addTextDisplayComponents((textDisplay) =>
@@ -31,14 +56,34 @@ export default function createPlayerResponse(
     return;
   }
 
-  container.addTextDisplayComponents((textDisplay) =>
-    textDisplay.setContent(
-      `# ${server.label}
-## Ergebnisse für: "${query}" (${filteredPlayers.length} Online)
+  const id = Math.random().toString(36).substring(2, 15);
+
+  global.cachedResponses[id] = filteredPlayers;
+  global.currentPageIdx[id] = 0;
+
+  const maxPages = Math.ceil(filteredPlayers.length / MAX_PLAYERS);
+
+  container
+    .addTextDisplayComponents((textDisplay) =>
+      textDisplay
+        .setContent(
+          `# ${server.label}
+## Ergebnisse ${query ? `für: "${query} "` : ''}(${filteredPlayers.length} Online)
 ${filteredPlayers
+  .slice(0, MAX_PLAYERS)
   .sort((a, b) => a.ping - b.ping)
   .map((p) => `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``)
   .join('\n')}`
+        )
+        .setId(2)
     )
-  );
+    .addSeparatorComponents((s) => s)
+    .addTextDisplayComponents((text) =>
+      text.setContent(`-# Seite 1/${maxPages}`)
+    )
+    .addActionRowComponents((row) =>
+      row.addComponents(
+        createButtons(id, true, filteredPlayers.length <= MAX_PLAYERS)
+      )
+    );
 }

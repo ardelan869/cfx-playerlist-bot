@@ -1,29 +1,9 @@
-import { RGBTuple } from 'discord.js';
-
-export interface ServerResponsePlayer {
-  endpoint: string;
-  id: number;
-  identifiers: string[];
-  name: string;
-  ping: number;
-}
-
-export interface ServerResponse {
-  Data: {
-    players: ServerResponsePlayer[];
-    vars: Record<string, string>;
-  };
-  EndPoint: string;
-}
-
-export function isServerResponse(value: unknown): value is ServerResponse {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'Data' in value &&
-    'EndPoint' in value
-  );
-}
+import {
+  type ContainerComponent,
+  type TopLevelComponent,
+  type RGBTuple,
+  ComponentType
+} from 'discord.js';
 
 export function getPingEmoji(ping: number): string {
   if (ping <= 30) return '<:status_online:1493077129242476604>';
@@ -51,4 +31,10 @@ export function hexToRGB(hex: string): RGBTuple {
         parseInt(result[3]!, 16)
       ]
     : DEFAULT_RGB_TUPLE;
+}
+
+export function isContainer(
+  component?: TopLevelComponent
+): component is ContainerComponent {
+  return component?.type === ComponentType.Container;
 }

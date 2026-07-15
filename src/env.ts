@@ -6,6 +6,7 @@ import { z } from 'zod';
 export const envSchema = z.object({
   CLIENT_TOKEN: z.string(),
   CLIENT_ID: z.string(),
+  FIVE_STATS_API: z.string(),
   NEON_DATABASE_URL: z.string(),
   REDIS_URL: z.string(),
   REDIS_TOKEN: z.string()

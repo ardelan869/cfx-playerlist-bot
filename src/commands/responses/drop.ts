@@ -1,10 +1,13 @@
 import type { ContainerBuilder } from 'discord.js';
 import { eq } from 'drizzle-orm';
 
-export default async function createDropResponse(
-  container: ContainerBuilder,
-  server: typeof schema.servers.$inferSelect
-) {
+export default async function createDropResponse({
+  container,
+  server
+}: {
+  container: ContainerBuilder;
+  server: typeof schema.servers.$inferSelect;
+}) {
   const drops = await db
     .select({
       timestamp: schema.drops.timestamp,

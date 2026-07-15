@@ -1,5 +1,4 @@
 import { command } from '@/lib/commands';
-import loadNotifications from '@/scripts/load-notifications';
 import { SlashCommandBuilder } from 'discord.js';
 import { eq } from 'drizzle-orm';
 
@@ -149,7 +148,5 @@ ${drops.map((drop) => `\`${drop.timestamp}\` - ${drop.label}`).join('\n')}`
         break;
       }
     }
-
-    await loadNotifications();
   }
 );
