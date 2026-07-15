@@ -86,4 +86,11 @@ ${filteredPlayers
         createButtons(id, true, filteredPlayers.length <= MAX_PLAYERS)
       )
     );
+
+  // FIXME: make a better solution
+  // Actually improve everything, shitty code - ardelan
+  setTimeout(() => {
+    delete global.cachedResponses[id];
+    delete global.currentPageIdx[id];
+  }, 5 * 60000);
 }
