@@ -63,5 +63,8 @@
         "https://cdn.discordapp.com/attachments/1453534026982752477/1495684818011422741/image.jpg"
       ]
     }
+  ],
+  "blacklist": [
+    "1295467501299175488"
   ]
 }

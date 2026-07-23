@@ -55,6 +55,14 @@ export async function handleSearch({
     return;
   }
 
+  if (config.blacklist.includes(user.id)) {
+    await reply({
+      content: 'Nein.'
+    });
+
+    return;
+  }
+
   const [server] = await db
     .select({
       id: schema.servers.id,
