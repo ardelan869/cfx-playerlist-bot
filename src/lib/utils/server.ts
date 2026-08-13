@@ -36,31 +36,7 @@ export interface ServerResponsePlayer {
 
 export function isServerResponse(value: unknown): value is ServerResponse {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    'endpoint' in value &&
-    'hostname' in value &&
-    'clean_name' in value &&
-    'clients' in value &&
-    'sv_maxclients' in value &&
-    'game' in value &&
-    'locale' in value &&
-    'premium' in value &&
-    'tags' in value &&
-    'owner' in value &&
-    'server_version' in value &&
-    'icon_version' in value &&
-    'banner_detail' in value &&
-    'discord' in value &&
-    'owner_name' in value &&
-    'owner_profile' in value &&
-    'project_name' in value &&
-    'project_desc' in value &&
-    'rank' in value &&
-    'game_rank' in value &&
-    'updated_at' in value &&
-    'resources' in value &&
-    'connect_ip' in value
+    typeof value === 'object' && value !== null && 'banner_detail' in value
   );
 }
 
@@ -90,6 +66,8 @@ export async function getServerInfo(server: string): Promise<ServerResponse> {
   }
 
   const data = await resp.json();
+
+  console.log(data);
 
   if (!isServerResponse(data)) {
     throw new Error('Server response is not valid');
