@@ -1,4 +1,4 @@
-export const interval = 60000;
+export const interval = 5 * 60000;
 
 export default async function activity() {
   if (!client.user) return;
