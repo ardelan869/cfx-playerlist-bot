@@ -13,7 +13,9 @@ import createDropResponse from './responses/drop';
 
 import {
   ContainerBuilder,
+  DiscordAPIError,
   MessageFlags,
+  RESTJSONErrorCodes,
   SlashCommandBuilder,
   type InteractionReplyOptions,
   type MessagePayload,
@@ -198,7 +200,20 @@ export default command(
       user: interaction.user,
       identifier,
       query,
-      reply: (options) => interaction.editReply(options),
+      reply: async (options) => {
+        try {
+          return await interaction.editReply(options);
+        } catch (error) {
+          if (
+            error instanceof DiscordAPIError &&
+            error.code === RESTJSONErrorCodes.UnknownMessage
+          ) {
+            return interaction.followUp(options as InteractionReplyOptions);
+          }
+
+          throw error;
+        }
+      },
       followUp: (options) => interaction.followUp(options)
     });
   }

@@ -31,14 +31,7 @@ const client = new Client({
   partials: [Partials.Channel, Partials.Message]
 }) as ExtendedClient;
 
-client.commands = new Collection();
-client.buttons = new Collection();
-client.modals = new Collection();
-client.selections = new Collection();
-
 global.client = client;
-global.cachedResponses = {};
-global.currentPageIdx = {};
 
 async function main() {
   if (existsSync('./config.json') || existsSync('../config.json')) {
@@ -52,6 +45,13 @@ async function main() {
   }
 
   try {
+    client.commands = new Collection();
+    client.buttons = new Collection();
+    client.modals = new Collection();
+    client.selections = new Collection();
+    global.cachedResponses = {};
+    global.currentPageIdx = {};
+
     await client.login(global.env.CLIENT_TOKEN);
 
     await Promise.all([

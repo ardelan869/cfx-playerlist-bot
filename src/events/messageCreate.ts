@@ -1,5 +1,6 @@
 import { handleSearch } from '@/commands/search';
 import { event } from '@/lib/events';
+import { DiscordAPIError, RESTJSONErrorCodes } from 'discord.js';
 
 export default event('messageCreate', async (message) => {
   if (message.author.bot) return;
@@ -46,12 +47,25 @@ Beispiel: **!fc saints**`
 
   const query = args.join(' ');
 
-  handleSearch({
+  await handleSearch({
     user: message.author,
     identifier,
     query,
     // guild: message.guild,
-    reply: (options) => message.reply(options)
+    reply: async (options) => {
+      try {
+        return await message.reply(options);
+      } catch (error) {
+        if (
+          error instanceof DiscordAPIError &&
+          error.code === RESTJSONErrorCodes.UnknownMessage
+        ) {
+          return channel.send(options);
+        }
+
+        throw error;
+      }
+    }
     // send: (options) => message.channel.send(options)
   });
 });
