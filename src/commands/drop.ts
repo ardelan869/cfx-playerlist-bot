@@ -59,7 +59,6 @@ export default command(
 
     const user = interaction.user.id;
 
-    // FIXME: hardcode it for now
     if (user !== '852630017404960848') {
       await interaction.editReply({
         content: 'Du bist nicht berechtigt, diesen Befehl zu verwenden.'

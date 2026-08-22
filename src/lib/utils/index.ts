@@ -4,6 +4,7 @@ import {
   type RGBTuple,
   ComponentType
 } from 'discord.js';
+import type { ServerResponsePlayer } from '@/lib/utils/server';
 
 export function getPingEmoji(ping: number): string {
   if (ping <= 30) return '<:status_online:1493077129242476604>';
@@ -37,4 +38,18 @@ export function isContainer(
   component?: TopLevelComponent
 ): component is ContainerComponent {
   return component?.type === ComponentType.Container;
+}
+
+export function formatPlayerListContent(
+  serverLabel: string,
+  query: string | undefined,
+  pagePlayers: ServerResponsePlayer[],
+  totalCount: number
+): string {
+  return `# ${serverLabel}
+## Ergebnisse ${query ? `für: "${query} "` : ''}(${totalCount} Online)
+${pagePlayers
+  .sort((a, b) => a.ping - b.ping)
+  .map((p) => `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``)
+  .join('\n')}`;
 }

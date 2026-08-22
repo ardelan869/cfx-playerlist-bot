@@ -1,26 +1,38 @@
 import { ButtonBuilder, ButtonStyle, type ContainerBuilder } from 'discord.js';
 import { type ServerResponsePlayer } from '@/lib/utils/server';
-import { getPingEmoji } from '@/lib/utils';
+import { formatPlayerListContent } from '@/lib/utils';
+import { createSession } from '@/lib/pagination-store';
 import { MAX_PLAYERS } from '@/lib/constants';
 
-export function createButtons(
-  id: string,
-  disablePrevPage: boolean = false,
-  disableNextPage: boolean = false
-) {
+export function createButtons(id: string, page: number, maxPages: number) {
+  const isFirstPage = page <= 0;
+  const isLastPage = page >= maxPages - 1;
+
+  const firstButton = new ButtonBuilder()
+    .setCustomId(`first:${id}`)
+    .setEmoji('⏮️')
+    .setDisabled(isFirstPage)
+    .setStyle(ButtonStyle.Secondary);
+
   const prevButton = new ButtonBuilder()
     .setCustomId(`prev:${id}`)
     .setEmoji('◀️')
-    .setDisabled(disablePrevPage)
+    .setDisabled(isFirstPage)
     .setStyle(ButtonStyle.Secondary);
 
   const nextButton = new ButtonBuilder()
     .setCustomId(`next:${id}`)
     .setEmoji('▶️')
-    .setDisabled(disableNextPage)
+    .setDisabled(isLastPage)
     .setStyle(ButtonStyle.Secondary);
 
-  return [prevButton, nextButton];
+  const lastButton = new ButtonBuilder()
+    .setCustomId(`last:${id}`)
+    .setEmoji('⏭️')
+    .setDisabled(isLastPage)
+    .setStyle(ButtonStyle.Secondary);
+
+  return [firstButton, prevButton, nextButton, lastButton];
 }
 
 export default function createPlayerResponse({
@@ -56,24 +68,19 @@ export default function createPlayerResponse({
     return;
   }
 
-  const id = Math.random().toString(36).substring(2, 15);
-
-  global.cachedResponses[id] = filteredPlayers;
-  global.currentPageIdx[id] = 0;
-
+  const id = createSession(filteredPlayers);
   const maxPages = Math.ceil(filteredPlayers.length / MAX_PLAYERS);
 
   container
     .addTextDisplayComponents((textDisplay) =>
       textDisplay
         .setContent(
-          `# ${server.label}
-## Ergebnisse ${query ? `für: "${query} "` : ''}(${filteredPlayers.length} Online)
-${filteredPlayers
-  .slice(0, MAX_PLAYERS)
-  .sort((a, b) => a.ping - b.ping)
-  .map((p) => `${getPingEmoji(p.ping)} **${p.name}** (${p.id}) \`${p.ping}ms\``)
-  .join('\n')}`
+          formatPlayerListContent(
+            server.label,
+            query,
+            filteredPlayers.slice(0, MAX_PLAYERS),
+            filteredPlayers.length
+          )
         )
         .setId(2)
     )
@@ -82,15 +89,6 @@ ${filteredPlayers
       text.setContent(`-# Seite 1/${maxPages}`)
     )
     .addActionRowComponents((row) =>
-      row.addComponents(
-        createButtons(id, true, filteredPlayers.length <= MAX_PLAYERS)
-      )
+      row.addComponents(createButtons(id, 0, maxPages))
     );
-
-  // FIXME: make a better solution
-  // Actually improve everything, shitty code - ardelan
-  setTimeout(() => {
-    delete global.cachedResponses[id];
-    delete global.currentPageIdx[id];
-  }, 5 * 60000);
 }

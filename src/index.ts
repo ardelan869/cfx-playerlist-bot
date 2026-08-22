@@ -49,8 +49,6 @@ async function main() {
     client.buttons = new Collection();
     client.modals = new Collection();
     client.selections = new Collection();
-    global.cachedResponses = {};
-    global.currentPageIdx = {};
 
     await client.login(global.env.CLIENT_TOKEN);
 
