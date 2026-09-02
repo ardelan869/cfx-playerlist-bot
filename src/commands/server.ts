@@ -1,6 +1,6 @@
 import { command } from '@/lib/commands';
 import { SlashCommandBuilder } from 'discord.js';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 export default command(
   new SlashCommandBuilder()
@@ -42,6 +42,24 @@ export default command(
     )
     .addSubcommand((subcommand) =>
       subcommand.setName('list').setDescription('List all servers')
+    )
+    .addSubcommand((subcommand) =>
+      subcommand
+        .setName('alias')
+        .setDescription('Add one or more aliases to a server')
+        .addStringOption((option) =>
+          option
+            .setName('identifier')
+            .setDescription('The server identifier')
+            .setRequired(true)
+            .setAutocomplete(true)
+        )
+        .addStringOption((option) =>
+          option
+            .setName('aliases')
+            .setDescription('Alias(es) to add, separated by spaces or commas')
+            .setRequired(true)
+        )
     )
     .setDefaultMemberPermissions(null),
   async (interaction) => {
@@ -123,17 +141,94 @@ export default command(
           .select({
             id: schema.servers.id,
             identifier: schema.servers.identifier,
-            label: schema.servers.label
+            label: schema.servers.label,
+            aliases: schema.servers.aliases
           })
           .from(schema.servers);
 
         await interaction.editReply({
           content: servers
-            .map(
-              (server) =>
-                `**${server.label}** (${server.identifier}) \`${server.id}\``
-            )
+            .map((server) => {
+              const aliases = server.aliases.length
+                ? ` — Aliase: ${server.aliases
+                    .map((alias) => `\`${alias}\``)
+                    .join(', ')}`
+                : '';
+
+              return `**${server.label}** (${server.identifier}) \`${server.id}\`${aliases}`;
+            })
             .join('\n')
+        });
+
+        break;
+      }
+      case 'alias': {
+        const identifier = interaction.options.getString('identifier', true);
+
+        const aliases = [
+          ...new Set(
+            interaction.options
+              .getString('aliases', true)
+              .split(/[\s,]+/)
+              .map((alias) => alias.trim().toLowerCase())
+              .filter(Boolean)
+          )
+        ];
+
+        if (!aliases.length) {
+          await interaction.editReply({
+            content: 'Keine gültigen Aliase angegeben.'
+          });
+
+          return;
+        }
+
+        const [server] = await db
+          .select({
+            identifier: schema.servers.identifier,
+            aliases: schema.servers.aliases
+          })
+          .from(schema.servers)
+          .where(eq(schema.servers.identifier, identifier));
+
+        if (!server) {
+          await interaction.editReply({
+            content: 'Server konnte nicht gefunden werden.'
+          });
+
+          return;
+        }
+
+        const taken = await db
+          .select({ identifier: schema.servers.identifier })
+          .from(schema.servers)
+          .where(inArray(schema.servers.identifier, aliases));
+
+        const reserved = new Set([
+          server.identifier,
+          ...server.aliases,
+          ...taken.map((row) => row.identifier)
+        ]);
+
+        const added = aliases.filter((alias) => !reserved.has(alias));
+
+        if (!added.length) {
+          await interaction.editReply({
+            content: 'Alias(e) bereits vergeben oder eingetragen.'
+          });
+
+          return;
+        }
+
+        await db
+          .update(schema.servers)
+          .set({ aliases: [...server.aliases, ...added] })
+          .where(eq(schema.servers.identifier, server.identifier));
+
+        await interaction.editReply({
+          content: `Alias(e) hinzugefügt: ${added
+            .map((alias) => `\`${alias}\``)
+            .join(', ')}`
         });
 
         break;

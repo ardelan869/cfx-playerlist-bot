@@ -1,6 +1,6 @@
 import { command } from '@/lib/commands';
 
-import { eq } from 'drizzle-orm';
+import { arrayContains, eq, or } from 'drizzle-orm';
 import {
   getPlayersFromServer,
   getServerInfo,
@@ -69,10 +69,16 @@ export async function handleSearch({
     .select({
       id: schema.servers.id,
       identifier: schema.servers.identifier,
-      label: schema.servers.label
+      label: schema.servers.label,
+      aliases: schema.servers.aliases
     })
     .from(schema.servers)
-    .where(eq(schema.servers.identifier, identifier))
+    .where(
+      or(
+        eq(schema.servers.identifier, identifier),
+        arrayContains(schema.servers.aliases, [identifier.toLowerCase()])
+      )
+    )
     .limit(1);
 
   if (!server) {

@@ -3,7 +3,8 @@ import { pgTable } from 'drizzle-orm/pg-core';
 const servers = pgTable('servers', (t) => ({
   id: t.text('id').notNull().primaryKey(),
   identifier: t.text('identifier').notNull().unique(),
-  label: t.text('label').notNull()
+  label: t.text('label').notNull(),
+  aliases: t.text('aliases').array().notNull().default([])
 }));
 
 const drops = pgTable('drops', (t) => ({
